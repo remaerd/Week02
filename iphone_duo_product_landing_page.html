@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iPhone Duo - A new iPhone enters the fold</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: '#050507',
+                        titanium: {
+                            100: '#f0f0f3',
+                            300: '#a1a1aa',
+                            500: '#71717a',
+                            800: '#27272a',
+                            900: '#18181b',
+                        },
+                        chrome: '#e4e4e7',
+                        appleGlow: '#3b82f6'
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Three.js & GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap');
+        
+        body {
+            background-color: #050507;
+            color: #f4f4f5;
+            overflow-x: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050507;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46;
+        }
+
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.65);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .text-gradient-titanium {
+            background: linear-gradient(135deg, #ffffff 20%, #90909a 60%, #e4e4e7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .text-gradient-glow {
+            background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #webgl-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .interactive-canvas {
+            pointer-events: auto !important;
+            cursor: grab;
+        }
+        .interactive-canvas:active {
+            cursor: grabbing;
+        }
+
+        .story-section {
+            position: relative;
+            z-index: 20;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .interactive-content {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="selection:bg-white selection:text-black">
+
+    <header class="fixed top-0 left-0 w-full z-50 glass-panel border-b border-white/5 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <svg class="w-6 h-6 fill-current text-white" viewBox="0 0 170 170">
+                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.34.13-9.16-1.92-14.48-6.13-3.23-2.62-7.14-7.23-11.74-13.84-6.42-9.28-11.45-19.8-15.08-31.56-3.63-11.76-5.45-23.36-5.45-34.8 0-14.78 3.73-27.13 11.19-37.05 7.46-9.92 16.95-14.97 28.47-15.15 4.58 0 9.77 1.18 15.57 3.55 5.8 2.37 9.8 3.63 12 3.63 1.83 0 5.92-1.3 12.28-3.9 6.36-2.6 11.52-3.8 15.48-3.6 10.88.54 19.81 4.38 26.79 11.52-9.68 5.83-14.4 13.88-14.16 24.15.24 8.04 3.32 15.02 9.24 20.94 5.92 5.92 13.08 9.12 21.48 9.6-1.28 7.32-3.52 14.54-6.72 21.66zm-31.78-106.63c0 7.37-2.61 14.34-7.83 20.91-5.22 6.57-11.83 10.51-19.83 11.82-.24-.96-.36-1.98-.36-3.06 0-7.37 2.76-14.5 8.28-21.39 5.52-6.89 12.24-10.87 20.16-11.94.12 1.2.18 2.42.18 3.66z"/>
+                </svg>
+                <span class="text-lg font-semibold tracking-tight text-white">iPhone Duo</span>
+            </div>
+            
+            <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-zinc-400">
+                <a href="#hero" class="hover:text-white transition-colors">Overview</a>
+                <a href="#unfold" class="hover:text-white transition-colors">Inner Screen</a>
+                <a href="#form" class="hover:text-white transition-colors">Titanium Core</a>
+                <a href="#cta" class="hover:text-white transition-colors">Pre-order</a>
+            </nav>
+
+            <div class="flex items-center space-x-4">
+                <button id="rotate-toggle-btn" class="interactive-content text-xs px-3.5 py-1.5 rounded-full glass-pill text-zinc-300 hover:text-white hover:bg-white/10 transition flex items-center space-x-1.5" title="Toggle 3D Orbit Dragging">
+                    <i data-lucide="rotate-3d" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">3D Drag Orbit</span>
+                </button>
+                <a href="#cta" class="interactive-content text-xs font-medium px-4 py-2 rounded-full bg-white text-black hover:bg-zinc-200 transition shadow-lg shadow-white/10">
+                    Pre-order
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3D Canvas Layer -->
+    <div id="webgl-container"></div>
+
+    <!-- Scroll Progress Bar -->
+    <div class="fixed top-0 left-0 h-[2px] bg-gradient-to-r from-blue-500 via-zinc-200 to-white z-50 transition-all duration-150" id="scroll-progress"></div>
+
+    <main class="relative z-20">
+
+        <!-- SECTION 1: HERO -->
+        <section id="hero" class="story-section px-6 md:px-12">
+            <div class="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center min-h-screen pt-20">
+                <div class="space-y-6 text-left">
+                    <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full glass-pill border border-white/10 text-xs text-zinc-300 font-medium">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                        <span>Titanium Chrome Architecture</span>
+                    </div>
+                    
+                    <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-gradient-titanium leading-tight">
+                        iPhone Duo
+                    </h1>
+                    
+                    <p class="text-xl md:text-2xl text-zinc-400 font-light max-w-lg leading-relaxed">
+                        A chrome white apple with a titanium texture that opens in the middle to unleash the dual displays inside.
+                    </p>
+
+                    <div class="pt-4 flex flex-wrap gap-4 items-center">
+                        <a href="#unfold" class="interactive-content inline-flex items-center space-x-2 px-6 py-3 rounded-full bg-white text-black font-medium text-sm hover:bg-zinc-200 transition group">
+                            <span>A new iPhone enters the fold</span>
+                            <i data-lucide="arrow-down" class="w-4 h-4 group-hover:translate-y-0.5 transition-transform"></i>
+                        </a>
+                        <div class="glass-pill px-4 py-3 rounded-full text-xs text-zinc-400 flex items-center space-x-2">
+                            <i data-lucide="mouse-pointer" class="w-3.5 h-3.5 text-zinc-300"></i>
+                            <span>Scroll to open the apple</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex flex-col space-y-4 items-end justify-center pointer-events-none">
+                    <div class="glass-panel p-5 rounded-2xl max-w-xs space-y-2 border border-white/10 shadow-2xl animate-float">
+                        <div class="text-xs text-zinc-500 uppercase tracking-widest font-semibold">Exterior Form</div>
+                        <div class="text-lg font-semibold text-white">Polished Grade 5 Titanium</div>
+                        <p class="text-xs text-zinc-400">Precision cut chrome shell sculpted into the iconic apple form factor.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- SECTION 2: UNFOLD / INNER DUAL SCREEN FEATURE -->
+        <section id="unfold" class="story-section px-6 md:px-12">
+            <div class="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center min-h-screen">
+                <div class="hidden md:block"></div>
+
+                <div class="space-y-6 text-left md:pl-8">
+                    <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full glass-pill border border-blue-500/30 text-xs text-blue-400 font-medium">
+                        <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                        <span>Inner Dual Display</span>
+                    </div>
+
+                    <h2 class="text-4xl md:text-6xl font-bold tracking-tight text-white leading-tight">
+                        Screens inside<br/>
+                        <span class="text-gradient-glow">the core.</span>
+                    </h2>
+
+                    <p class="text-lg text-zinc-400 font-light leading-relaxed">
+                        Split open the titanium apple to reveal twin Ultra Retina OLED screens embedded directly inside the cut interior faces.
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-4 pt-4">
+                        <div class="glass-panel p-4 rounded-xl space-y-1">
+                            <div class="text-2xl font-bold text-white">Dual OLED</div>
+                            <div class="text-xs text-zinc-400">Embedded Inner Display</div>
+                        </div>
+                        <div class="glass-panel p-4 rounded-xl space-y-1">
+                            <div class="text-2xl font-bold text-white">Zero-Gap</div>
+                            <div class="text-xs text-zinc-400">Titanium Core Hinge</div>
+                        </div>
+                        <div class="glass-panel p-4 rounded-xl space-y-1">
+                            <div class="text-2xl font-bold text-white">3000 nits</div>
+                            <div class="text-xs text-zinc-400">Peak Screen Brightness</div>
+                        </div>
+                        <div class="glass-panel p-4 rounded-xl space-y-1">
+                            <div class="text-2xl font-bold text-white">Apple M4</div>
+                            <div class="text-xs text-zinc-400">Dual Display Engine</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- SECTION 3: SEAMLESS TECH & DUO ARCHITECTURE -->
+        <section id="form" class="story-section px-6 md:px-12">
+            <div class="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center min-h-screen">
+                <div class="space-y-6 text-left">
+                    <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full glass-pill border border-white/10 text-xs text-zinc-300 font-medium">
+                        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-zinc-300"></i>
+                        <span>Seamless Closure</span>
+                    </div>
+
+                    <h2 class="text-4xl md:text-6xl font-bold tracking-tight text-white leading-tight">
+                        Folds shut.<br/>
+                        <span class="text-zinc-500">Pure chrome exterior.</span>
+                    </h2>
+
+                    <p class="text-lg text-zinc-400 font-light leading-relaxed">
+                        Close the iPhone Duo back together to securely tuck away the interior screens inside an impenetrable, mirror-polished titanium shell.
+                    </p>
+
+                    <ul class="space-y-3 text-sm text-zinc-300 pt-2">
+                        <li class="flex items-center space-x-3">
+                            <i data-lucide="check" class="w-4 h-4 text-blue-400"></i>
+                            <span>Protected screens embedded inside the apple core</span>
+                        </li>
+                        <li class="flex items-center space-x-3">
+                            <i data-lucide="check" class="w-4 h-4 text-blue-400"></i>
+                            <span>Magnetic LiquidMetal seal with flush alignment</span>
+                        </li>
+                        <li class="flex items-center space-x-3">
+                            <i data-lucide="check" class="w-4 h-4 text-blue-400"></i>
+                            <span>Ceramic Shield display face protection inside</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="hidden md:block"></div>
+            </div>
+        </section>
+
+
+        <!-- SECTION 4: CALL TO ACTION (CTA) -->
+        <section id="cta" class="story-section px-6 md:px-12 text-center">
+            <div class="max-w-4xl mx-auto space-y-8 py-20">
+                <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full glass-pill border border-blue-500/20 text-sm text-blue-300 font-medium animate-pulse">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>The next slice of technology.</span>
+                </div>
+
+                <h2 class="text-5xl md:text-8xl font-extrabold tracking-tight text-white leading-none">
+                    A new iPhone <br/>
+                    <span class="text-gradient-glow">enters the fold.</span>
+                </h2>
+
+                <p class="text-xl md:text-2xl text-zinc-400 font-light max-w-xl mx-auto">
+                    Experience dual screens embedded directly inside the chrome titanium apple.
+                </p>
+
+                <!-- Interactive Pre-order Box -->
+                <div class="interactive-content max-w-md mx-auto glass-panel p-8 rounded-3xl space-y-6 border border-white/10 shadow-2xl mt-8">
+                    <div class="flex justify-between items-center border-b border-white/10 pb-4">
+                        <div class="text-left">
+                            <div class="text-xs text-zinc-400 uppercase tracking-wider">iPhone Duo</div>
+                            <div class="text-lg font-bold text-white">512GB / 1TB</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-zinc-400">Starting at</div>
+                            <div class="text-xl font-extrabold text-white">$1,499</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <button class="w-full py-4 rounded-full bg-white text-black font-semibold hover:bg-zinc-200 transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl flex items-center justify-center space-x-2">
+                            <span>Pre-order iPhone Duo</span>
+                            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                        </button>
+                        <button id="replay-anim-btn" class="w-full py-3 rounded-full glass-pill text-zinc-300 text-sm hover:text-white hover:bg-white/10 transition flex items-center justify-center space-x-2">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            <span>Replay Experience</span>
+                        </button>
+                    </div>
+
+                    <div class="text-xs text-zinc-500">
+                        Includes AppleCare+ option and MagSafe Duo Charger.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-20 border-t border-white/5 glass-panel py-8 text-center text-xs text-zinc-500">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+                &copy; 2026 Apple Inc. All rights reserved. iPhone Duo Concept.
+            </div>
+            <div class="flex space-x-6">
+                <a href="#" class="hover:text-zinc-300 transition">Privacy Policy</a>
+                <a href="#" class="hover:text-zinc-300 transition">Terms of Sale</a>
+                <a href="#" class="hover:text-zinc-300 transition">Legal & Regulatory</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // Canvas Container
+        const container = document.getElementById('webgl-container');
+        
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050507, 0.035);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 0, 6.8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.35;
+        container.appendChild(renderer.domElement);
+
+        // Lighting Setup
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const keyLight = new THREE.DirectionalLight(0xffffff, 2.8);
+        keyLight.position.set(6, 8, 6);
+        keyLight.castShadow = true;
+        scene.add(keyLight);
+
+        const blueRimLight = new THREE.PointLight(0x3b82f6, 4.5, 15);
+        blueRimLight.position.set(-6, -2, -1);
+        scene.add(blueRimLight);
+
+        const fillLight = new THREE.DirectionalLight(0x93c5fd, 1.2);
+        fillLight.position.set(-5, 3, 5);
+        scene.add(fillLight);
+
+        // Titanium Chrome Material
+        const titaniumMaterial = new THREE.MeshStandardMaterial({
+            color: 0xf0f2f8,
+            metalness: 0.92,
+            roughness: 0.16,
+            envMapIntensity: 1.8
+        });
+
+        // Dark Chassis Casing Material for interior screen housing
+        const innerChassisMaterial = new THREE.MeshStandardMaterial({
+            color: 0x0c0c10,
+            metalness: 0.85,
+            roughness: 0.2
+        });
+
+        // Hinge Metal Material
+        const hingeMetalMaterial = new THREE.MeshStandardMaterial({
+            color: 0xd4d4d8,
+            metalness: 0.95,
+            roughness: 0.1
+        });
+
+        function createInnerScreenCanvas(side) {
+            const screenCanvas = document.createElement('canvas');
+            screenCanvas.width = 512;
+            screenCanvas.height = 1024;
+            const ctx = screenCanvas.getContext('2d');
+
+            // Screen Dark Background
+            ctx.fillStyle = '#09090e';
+            ctx.fillRect(0, 0, 512, 1024);
+
+            // Radiant Wallpaper Gradient
+            const grad = ctx.createRadialGradient(256, side === 'left' ? 300 : 700, 30, 256, 500, 480);
+            grad.addColorStop(0, side === 'left' ? 'rgba(59, 130, 246, 0.65)' : 'rgba(147, 197, 253, 0.55)');
+            grad.addColorStop(1, 'rgba(5, 5, 10, 0.95)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 512, 1024);
+
+            // Screen Bezel Border Accent
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+            ctx.lineWidth = 12;
+            ctx.strokeRect(10, 10, 492, 1004);
+
+            if (side === 'left') {
+                // LEFT SCREEN: Clock & Widgets
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 88px -apple-system, Inter, sans-serif';
+                ctx.fillText('09:41', 55, 180);
+
+                ctx.font = '28px -apple-system, Inter, sans-serif';
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillText('Monday, October 5', 60, 230);
+
+                // Main Widget Card
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.beginPath();
+                ctx.roundRect(45, 290, 422, 270, 28);
+                ctx.fill();
+
+                ctx.fillStyle = '#3b82f6';
+                ctx.beginPath();
+                ctx.arc(105, 360, 28, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 30px Inter';
+                ctx.fillText('iPhone Duo OS', 155, 370);
+
+                ctx.fillStyle = '#a1a1aa';
+                ctx.font = '22px Inter';
+                ctx.fillText('Inner Screen Active', 55, 450);
+                ctx.fillText('Apple M4 Dual Engine', 55, 490);
+
+                // Dock
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.beginPath();
+                ctx.roundRect(45, 870, 422, 95, 32);
+                ctx.fill();
+
+                const colors = ['#22c55e', '#3b82f6', '#f43f5e', '#a855f7'];
+                colors.forEach((c, i) => {
+                    ctx.fillStyle = c;
+                    ctx.beginPath();
+                    ctx.roundRect(75 + i * 98, 892, 50, 50, 14);
+                    ctx.fill();
+                });
+            } else {
+                // RIGHT SCREEN: Studio & Creative Canvas
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 38px Inter';
+                ctx.fillText('Duo Studio', 55, 120);
+
+                // App Cards
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.beginPath();
+                ctx.roundRect(45, 160, 422, 340, 28);
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.22)';
+                ctx.beginPath();
+                ctx.roundRect(75, 200, 362, 180, 20);
+                ctx.fill();
+
+                ctx.fillStyle = '#60a5fa';
+                ctx.font = '600 24px Inter';
+                ctx.fillText('Continuity Screen', 95, 250);
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = '20px Inter';
+                ctx.fillText('Seamless Inner Display', 95, 290);
+                ctx.fillText('Zero-Gap Hinge Sync', 95, 325);
+
+                // Secondary Card
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.beginPath();
+                ctx.roundRect(45, 530, 422, 300, 28);
+                ctx.fill();
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 28px Inter';
+                ctx.fillText('Battery 100%', 75, 595);
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '20px Inter';
+                ctx.fillText('MagSafe Duo Connected', 75, 635);
+
+                // Bottom Dock
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.beginPath();
+                ctx.roundRect(45, 870, 422, 95, 32);
+                ctx.fill();
+
+                const colorsR = ['#eab308', '#06b6d4', '#ec4899', '#6366f1'];
+                colorsR.forEach((c, i) => {
+                    ctx.fillStyle = c;
+                    ctx.beginPath();
+                    ctx.roundRect(75 + i * 98, 892, 50, 50, 14);
+                    ctx.fill();
+                });
+            }
+
+            const texture = new THREE.CanvasTexture(screenCanvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        const leftScreenMat = new THREE.MeshStandardMaterial({
+            map: createInnerScreenCanvas('left'),
+            roughness: 0.15,
+            metalness: 0.1,
+            emissive: 0x112244,
+            emissiveIntensity: 0.6
+        });
+
+        const rightScreenMat = new THREE.MeshStandardMaterial({
+            map: createInnerScreenCanvas('right'),
+            roughness: 0.15,
+            metalness: 0.1,
+            emissive: 0x112244,
+            emissiveIntensity: 0.6
+        });
+
+        const mainGroup = new THREE.Group();
+        scene.add(mainGroup);
+
+        // Build Apple Half with dark embedded chassis housing (No giant white background planes)
+        function buildAppleHalf(isLeft) {
+            const halfGroup = new THREE.Group();
+
+            // 1. Outer Chrome Titanium Apple Half
+            const phiStart = isLeft ? -Math.PI / 2 : Math.PI / 2;
+            const R = 1.8;
+            const sphereGeo = new THREE.SphereGeometry(R, 64, 64, phiStart, Math.PI, 0, Math.PI);
+
+            const pos = sphereGeo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                let x = pos.getX(i);
+                let y = pos.getY(i);
+                let z = pos.getZ(i);
+
+                // Normalized Y position (-1 to 1)
+                const normY = y / R;
+                
+                // Smooth, rounded spherical profile with subtle apple widening at upper-middle
+                let radiusScale = 1.0 + 0.06 * Math.sin((normY + 0.2) * Math.PI * 0.7);
+
+                // Gentle top stem dimple
+                if (normY > 0.65) {
+                    const topFactor = (normY - 0.65) / 0.35;
+                    radiusScale -= 0.08 * Math.pow(topFactor, 2);
+                    y -= 0.1 * R * Math.pow(topFactor, 2);
+                }
+                
+                // Subtle, full bottom dimple rounding
+                if (normY < -0.7) {
+                    const botFactor = (-0.7 - normY) / 0.3;
+                    radiusScale -= 0.05 * Math.pow(botFactor, 2);
+                    y += 0.06 * R * Math.pow(botFactor, 2);
+                }
+
+                x *= radiusScale;
+                z *= radiusScale;
+
+                pos.setXYZ(i, x, y, z);
+            }
+            sphereGeo.computeVertexNormals();
+
+            const outerAppleMesh = new THREE.Mesh(sphereGeo, titaniumMaterial);
+            outerAppleMesh.castShadow = true;
+            outerAppleMesh.receiveShadow = true;
+            halfGroup.add(outerAppleMesh);
+
+            // 2. Embedded Dark Phone Frame / Casing (Flush inside cut apple face)
+            const frameWidth = 1.45;
+            const frameHeight = 2.85;
+            const frameDepth = 0.08;
+            
+            const frameGeo = new THREE.BoxGeometry(frameDepth, frameHeight, frameWidth);
+            const frameMesh = new THREE.Mesh(frameGeo, innerChassisMaterial);
+            // Offset slightly toward center seam so screens line up flush
+            frameMesh.position.set(isLeft ? 0.04 : -0.04, 0, frameWidth * 0.5);
+            halfGroup.add(frameMesh);
+
+            // 3. OLED Display Screen
+            const screenWidth = 1.38;
+            const screenHeight = 2.78;
+            const screenGeo = new THREE.PlaneGeometry(screenWidth, screenHeight);
+            const screenMesh = new THREE.Mesh(screenGeo, isLeft ? leftScreenMat : rightScreenMat);
+            
+            // Orient screen facing outward from cut face
+            screenMesh.position.set(isLeft ? 0.082 : -0.082, 0, frameWidth * 0.5);
+            screenMesh.rotation.y = isLeft ? Math.PI / 2 : -Math.PI / 2;
+            halfGroup.add(screenMesh);
+
+            return halfGroup;
+        }
+
+        // Center seam hinge position for flip-phone folding style
+        const HINGE_Z = 0;
+
+        // Left Half Pivot
+        const leftPivotGroup = new THREE.Group();
+        leftPivotGroup.position.set(0, 0, HINGE_Z);
+        mainGroup.add(leftPivotGroup);
+
+        const leftHalfMesh = buildAppleHalf(true);
+        leftHalfMesh.position.set(0, 0, -HINGE_Z);
+        leftPivotGroup.add(leftHalfMesh);
+
+        // Right Half Pivot
+        const rightPivotGroup = new THREE.Group();
+        rightPivotGroup.position.set(0, 0, HINGE_Z);
+        mainGroup.add(rightPivotGroup);
+
+        const rightHalfMesh = buildAppleHalf(false);
+        rightHalfMesh.position.set(0, 0, -HINGE_Z);
+        rightPivotGroup.add(rightHalfMesh);
+
+        // Central Flip-Phone Mechanical Hinge Joint Spine (Connects the two screen halves down the middle)
+        const hingeSpineGroup = new THREE.Group();
+        
+        const spineGeo = new THREE.CylinderGeometry(0.045, 0.045, 2.88, 32);
+        const spineMesh = new THREE.Mesh(spineGeo, hingeMetalMaterial);
+        spineMesh.position.set(0, 0, 0);
+        hingeSpineGroup.add(spineMesh);
+
+        // Top & Bottom Hinge End Caps
+        [-1.44, 1.44].forEach(yPos => {
+            const capGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.08, 32);
+            const capMesh = new THREE.Mesh(capGeo, hingeMetalMaterial);
+            capMesh.position.set(0, yPos, 0);
+            hingeSpineGroup.add(capMesh);
+        });
+
+        mainGroup.add(hingeSpineGroup);
+
+        // Apple Top Stem
+        const stemCurve = new THREE.CubicBezierCurve3(
+            new THREE.Vector3(0, 1.42, 0),
+            new THREE.Vector3(0.05, 1.72, 0),
+            new THREE.Vector3(0.18, 1.90, 0.1),
+            new THREE.Vector3(0.22, 2.00, 0.15)
+        );
+        const stemGeo = new THREE.TubeGeometry(stemCurve, 20, 0.045, 8, false);
+        const stemMesh = new THREE.Mesh(stemGeo, titaniumMaterial);
+        stemMesh.castShadow = true;
+        mainGroup.add(stemMesh);
+
+        // Ambient Particles
+        const particleCount = 200;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePos = new Float32Array(particleCount * 3);
+
+        for (let i = 0; i < particleCount * 3; i += 3) {
+            particlePos[i] = (Math.random() - 0.5) * 14;
+            particlePos[i + 1] = (Math.random() - 0.5) * 14;
+            particlePos[i + 2] = (Math.random() - 0.5) * 14;
+        }
+
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+        const particleMat = new THREE.PointsMaterial({
+            color: 0x93c5fd,
+            size: 0.035,
+            transparent: true,
+            opacity: 0.45,
+            blending: THREE.AdditiveBlending
+        });
+        const particleSystem = new THREE.Points(particleGeo, particleMat);
+        scene.add(particleSystem);
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        const mainTimeline = gsap.timeline({
+            scrollTrigger: {
+                trigger: "body",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1.2,
+                onUpdate: (self) => {
+                    document.getElementById('scroll-progress').style.width = (self.progress * 100) + '%';
+                }
+            }
+        });
+
+        // Stage 1: Scroll intro angle
+        mainTimeline.to(mainGroup.rotation, {
+            y: Math.PI * 0.12,
+            x: 0.05,
+            duration: 1.5,
+            ease: "power2.inOut"
+        }, 0);
+
+        // Stage 2: OPEN APPLE HALVES TO REVEAL INNER SCREENS
+        // Swing left & right halves open from rear pivot so inner faces swing to face camera (+Z)
+        mainTimeline.to(leftPivotGroup.rotation, {
+            y: -Math.PI * 0.48, // Opens left half 86 degrees to reveal screen
+            duration: 3,
+            ease: "power2.inOut"
+        }, 1);
+
+        mainTimeline.to(rightPivotGroup.rotation, {
+            y: Math.PI * 0.48, // Opens right half 86 degrees to reveal screen
+            duration: 3,
+            ease: "power2.inOut"
+        }, 1);
+
+        // Turn mainGroup to align open screens squarely with camera
+        mainTimeline.to(mainGroup.rotation, {
+            y: 0,
+            x: 0,
+            duration: 2.5,
+            ease: "power2.inOut"
+        }, 1.2);
+
+        // Hide stem when fully open
+        mainTimeline.to(stemMesh.scale, {
+            x: 0, y: 0, z: 0,
+            duration: 1.5,
+            ease: "power2.in"
+        }, 1.2);
+
+        // Camera zoom closer into the open dual displays
+        mainTimeline.to(camera.position, {
+            z: 5.0,
+            y: 0,
+            duration: 3,
+            ease: "power2.inOut"
+        }, 1.2);
+
+
+        // Stage 3: RE-CLOSE THE APPLE HALVES (Section 3)
+        mainTimeline.to(leftPivotGroup.rotation, {
+            y: 0,
+            duration: 3,
+            ease: "power2.inOut"
+        }, 4.5);
+
+        mainTimeline.to(rightPivotGroup.rotation, {
+            y: 0,
+            duration: 3,
+            ease: "power2.inOut"
+        }, 4.5);
+
+        // Re-appear stem
+        mainTimeline.to(stemMesh.scale, {
+            x: 1, y: 1, z: 1,
+            duration: 1.5,
+            ease: "power2.out"
+        }, 5.2);
+
+        // Rotate closed chrome apple
+        mainTimeline.to(mainGroup.rotation, {
+            y: Math.PI * 2,
+            x: -0.1,
+            duration: 3,
+            ease: "power2.inOut"
+        }, 4.5);
+
+
+        // Stage 4: FINAL CTA POSE & CAMERA PULL BACK
+        mainTimeline.to(camera.position, {
+            z: 7.2,
+            y: 0.2,
+            duration: 2,
+            ease: "power2.out"
+        }, 7.5);
+
+        mainTimeline.to(mainGroup.rotation, {
+            y: Math.PI * 2.35,
+            x: 0.1,
+            duration: 2.5,
+            ease: "power2.out"
+        }, 7.5);
+
+        mainTimeline.to(blueRimLight, {
+            intensity: 7,
+            duration: 2
+        }, 8);
+
+
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let orbitEnabled = false;
+
+        const rotateToggleBtn = document.getElementById('rotate-toggle-btn');
+        rotateToggleBtn.addEventListener('click', () => {
+            orbitEnabled = !orbitEnabled;
+            if (orbitEnabled) {
+                container.classList.add('interactive-canvas');
+                rotateToggleBtn.classList.add('bg-blue-600', 'text-white');
+                rotateToggleBtn.classList.remove('glass-pill');
+            } else {
+                container.classList.remove('interactive-canvas');
+                rotateToggleBtn.classList.remove('bg-blue-600');
+                rotateToggleBtn.classList.add('glass-pill');
+            }
+        });
+
+        let mouseX = 0;
+        let mouseY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth - 0.5) * 0.3;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * 0.3;
+
+            if (isDragging && orbitEnabled) {
+                const deltaMove = {
+                    x: e.clientX - previousMousePosition.x,
+                    y: e.clientY - previousMousePosition.y
+                };
+
+                mainGroup.rotation.y += deltaMove.x * 0.008;
+                mainGroup.rotation.x += deltaMove.y * 0.008;
+            }
+
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('mousedown', () => { if (orbitEnabled) isDragging = true; });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        window.addEventListener('touchstart', (e) => {
+            if (orbitEnabled && e.touches.length === 1) {
+                isDragging = true;
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+        });
+        window.addEventListener('touchmove', (e) => {
+            if (isDragging && orbitEnabled && e.touches.length === 1) {
+                const deltaMove = {
+                    x: e.touches[0].clientX - previousMousePosition.x,
+                    y: e.touches[0].clientY - previousMousePosition.y
+                };
+                mainGroup.rotation.y += deltaMove.x * 0.008;
+                mainGroup.rotation.x += deltaMove.y * 0.008;
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+        });
+        window.addEventListener('touchend', () => { isDragging = false; });
+
+        document.getElementById('replay-anim-btn').addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Render Loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            if (!isDragging) {
+                mainGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.06;
+                mainGroup.rotation.z = THREE.MathUtils.lerp(mainGroup.rotation.z, mouseX * 0.25, 0.05);
+            }
+
+            particleSystem.rotation.y = elapsedTime * 0.02;
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function() {
+            animate();
+        };
+    </script>
+</body>
+</html>
